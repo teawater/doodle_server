@@ -3,12 +3,18 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"golang.org/x/net/websocket"
 )
 
 const ssl_crt = "server.crt"
 const ssl_key = "server.key"
+
+const color_x = 750
+const color_y = 750
+var color_lock sync.RWMutex
+var color [color_x][color_y]string
 
 func onConnected(ws *websocket.Conn) {
 	var err error
@@ -36,6 +42,14 @@ func onConnected(ws *websocket.Conn) {
 }
 
 func main() {
+	for x := 0; x < color_x; x++ {
+		for y := 0; y < color_x; y++ {
+			color[x][y] = "#ffffff"
+		}
+	}
+	log.Println(color)
+	return
+
 	http.Handle("/", websocket.Handler(onConnected))
 
 	log.Fatal(http.ListenAndServeTLS(":443", ssl_crt, ssl_key, nil))
