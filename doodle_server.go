@@ -24,7 +24,7 @@ func onConnected(ws *websocket.Conn) {
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
 
 	for {
-
+		
 
 		var reply string
 
