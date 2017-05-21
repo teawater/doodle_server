@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"encoding/json"
 
 	"golang.org/x/net/websocket"
 )
@@ -19,9 +20,12 @@ var color [color_x][color_y]string
 func onConnected(ws *websocket.Conn) {
 	var err error
 
+	//check the client
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
 
 	for {
+
+
 		var reply string
 
 		if err = websocket.Message.Receive(ws, &reply); err != nil {
@@ -47,8 +51,6 @@ func main() {
 			color[x][y] = "#ffffff"
 		}
 	}
-	log.Println(color)
-	return
 
 	http.Handle("/", websocket.Handler(onConnected))
 
