@@ -23,6 +23,12 @@ func onConnected(ws *websocket.Conn) {
 	//check the client
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
 
+	//Handle first pack
+	if err = websocket.Message.Receive(ws, &reply); err != nil {
+		log.Println("Can't receive")
+		break
+	}
+
 	for {
 		
 
