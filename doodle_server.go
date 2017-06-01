@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 	"encoding/json"
 
 	"golang.org/x/net/websocket"
@@ -19,15 +20,18 @@ var color [color_x][color_y]string
 
 func onConnected(ws *websocket.Conn) {
 	var err error
+	var reply string
 
 	//check the client
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
 
 	//Handle first pack
+	ws.SetDeadline(time.Now().Add(time.Second * 60))
 	if err = websocket.Message.Receive(ws, &reply); err != nil {
-		log.Println("Can't receive")
-		break
+		log.Println("Get first packet error:", err)
+		return
 	}
+	err = json.Unmarshal([]byte(reply), &new)
 
 	for {
 		
