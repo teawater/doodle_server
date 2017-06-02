@@ -15,12 +15,27 @@ const ssl_key = "server.key"
 
 const color_x = 750
 const color_y = 750
-var color_lock sync.RWMutex
-var color [color_x][color_y]string
+
+type color_s struct {
+	lock sync.RWMutex
+	id uint64_t
+	data [color_x][color_y]string
+}
+var color color_s
+
+type client_s struct {
+	id uint64_t
+}
+
 
 func onConnected(ws *websocket.Conn) {
 	var err error
 	var reply string
+	type reply_pkg_s struct {
+		fmt int
+		id uint64
+	}
+	var reply_pkg reply_pkg_s
 
 	//check the client
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
@@ -31,7 +46,11 @@ func onConnected(ws *websocket.Conn) {
 		log.Println("Get first packet error:", err)
 		return
 	}
-	err = json.Unmarshal([]byte(reply), &new)
+	err = json.Unmarshal([]byte(reply), &reply_pkg)
+	if reply_pkg.fmt != 0 {
+		log.Println("Get first packet error:", reply_pkg)
+		return
+	}
 
 	for {
 		
