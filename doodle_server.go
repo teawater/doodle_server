@@ -23,9 +23,7 @@ type color_s struct {
 }
 var color color_s
 
-type client_s struct {
-	id uint64_t
-}
+chan string
 
 
 func onConnected(ws *websocket.Conn) {
