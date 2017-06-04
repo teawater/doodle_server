@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 	"encoding/json"
+	"container/list"
 
 	"golang.org/x/net/websocket"
 )
@@ -23,8 +24,8 @@ type color_s struct {
 }
 var color color_s
 
-chan string
-
+var clients *list.List
+var clients_lock sync.Mutex
 
 func onConnected(ws *websocket.Conn) {
 	var err error
