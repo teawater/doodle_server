@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"fmt"
 	"encoding/json"
 	"container/list"
 
@@ -18,59 +19,97 @@ const color_x = 750
 const color_y = 750
 
 type color_s struct {
-	lock sync.RWMutex
-	id uint64_t
+	fmt int
 	data [color_x][color_y]string
 }
 var color color_s
+var color_id uint64_t
+var color_lock sync.RWMutex
 
 var clients *list.List
 var clients_lock sync.Mutex
 
+func sync_color_to_client(ws *websocket.Conn, id *uint64) (err error) {
+	err = nil
+
+	color_lock.RLock()
+	defer color_lock.RUnlock()
+
+	if color_id == id {
+		return
+	}
+	if color_id < id {
+		err = fmt.Errorf("get wrong id %d that it should small than %d", id, color_id)
+		return
+	}
+
+	*id = color_id
+
+	ws.SetDeadline(time.Now().Add(time.Second * 10))
+	err = websocket.JSON.Send(ws, color)
+	return
+}
+
+func handle_receive_pack(ws *websocket.Conn, quit chan bool) {
+	
+}
+
 func onConnected(ws *websocket.Conn) {
 	var err error
-	var reply string
-	type reply_pkg_s struct {
+	type reply_s struct {
 		fmt int
 		id uint64
 	}
-	var reply_pkg reply_pkg_s
+	var reply reply_s
 
 	//check the client
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
 
 	//Handle first pack
 	ws.SetDeadline(time.Now().Add(time.Second * 60))
-	if err = websocket.Message.Receive(ws, &reply); err != nil {
+	err := websocket.JSON.Receive(ws, &reply)
+	if err != nil {
 		log.Println("Get first packet error:", err)
 		return
 	}
-	err = json.Unmarshal([]byte(reply), &reply_pkg)
-	if reply_pkg.fmt != 0 {
-		log.Println("Get first packet error:", reply_pkg)
+	if reply.fmt != 0 {
+		log.Println("Get first packet error:", reply)
 		return
 	}
 
-	for {
-		
+	//First sync the color to the client
+	id := reply.id
+	err = sync_color_to_client(ws, &id)
+	if err != nil {
+		log.Println("First sync fail:", err)
+		return
+	}
 
-		var reply string
+	/* Add client to clients.  */
+	sync_ch := make(chan bool, 1)
+	clients_lock.Lock()
+	clients.PushBack(sync_ch)
+	clients_lock.Unlock()
 
-		if err = websocket.Message.Receive(ws, &reply); err != nil {
-			log.Println("Can't receive")
-			break
-		}
+	/* Creat new goroutine to receive value.  */
+	quit_ch := make(chan bool, 1)
+	go handle_receive_pack(ws, quit_ch)
 
-		log.Println("Received back from client: " + reply)
-
-		msg := "Received:  " + reply
-		log.Println("Sending to client: " + msg)
-
-		if err = websocket.Message.Send(ws, msg); err != nil {
-			log.Println("Can't send")
-			break
+	loop := true
+	for loop {
+		select {
+			case <-sync_ch:
+				err = sync_color_to_client(ws, &id)
+				if err != nil {
+					log.Println("Sync fail:", err)
+					loop = false
+				}
+			case <-done_ch:
+				loop = false
 		}
 	}
+
+	ws.Close()
 }
 
 func main() {
@@ -79,6 +118,7 @@ func main() {
 			color[x][y] = "#ffffff"
 		}
 	}
+	clients := list.New()
 
 	http.Handle("/", websocket.Handler(onConnected))
 
