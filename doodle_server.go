@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 	"fmt"
-	"encoding/json"
 	"container/list"
 
 	"golang.org/x/net/websocket"
@@ -23,7 +22,7 @@ type color_s struct {
 	data [color_x][color_y]string
 }
 var color color_s
-var color_id uint64_t
+var color_id uint64
 var color_lock sync.RWMutex
 
 var clients *list.List
@@ -35,11 +34,11 @@ func sync_color_to_client(ws *websocket.Conn, id *uint64) (err error) {
 	color_lock.RLock()
 	defer color_lock.RUnlock()
 
-	if color_id == id {
+	if color_id == *id {
 		return
 	}
-	if color_id < id {
-		err = fmt.Errorf("get wrong id %d that it should small than %d", id, color_id)
+	if color_id < *id {
+		err = fmt.Errorf("get wrong id %d that it should small than %d", *id, color_id)
 		return
 	}
 
@@ -47,6 +46,7 @@ func sync_color_to_client(ws *websocket.Conn, id *uint64) (err error) {
 
 	ws.SetDeadline(time.Now().Add(time.Second * 10))
 	err = websocket.JSON.Send(ws, color)
+
 	return
 }
 
@@ -67,7 +67,7 @@ func onConnected(ws *websocket.Conn) {
 
 	//Handle first pack
 	ws.SetDeadline(time.Now().Add(time.Second * 60))
-	err := websocket.JSON.Receive(ws, &reply)
+	err = websocket.JSON.Receive(ws, &reply)
 	if err != nil {
 		log.Println("Get first packet error:", err)
 		return
@@ -80,6 +80,7 @@ func onConnected(ws *websocket.Conn) {
 	//First sync the color to the client
 	id := reply.id
 	err = sync_color_to_client(ws, &id)
+	log.Println("First sync fail:", err)
 	if err != nil {
 		log.Println("First sync fail:", err)
 		return
@@ -104,7 +105,7 @@ func onConnected(ws *websocket.Conn) {
 					log.Println("Sync fail:", err)
 					loop = false
 				}
-			case <-done_ch:
+			case <-quit_ch:
 				loop = false
 		}
 	}
@@ -115,10 +116,10 @@ func onConnected(ws *websocket.Conn) {
 func main() {
 	for x := 0; x < color_x; x++ {
 		for y := 0; y < color_x; y++ {
-			color[x][y] = "#ffffff"
+			color.data[x][y] = "#ffffff"
 		}
 	}
-	clients := list.New()
+	clients = list.New()
 
 	http.Handle("/", websocket.Handler(onConnected))
 
