@@ -80,7 +80,6 @@ func onConnected(ws *websocket.Conn) {
 	//First sync the color to the client
 	id := reply.id
 	err = sync_color_to_client(ws, &id)
-	log.Println("First sync fail:", err)
 	if err != nil {
 		log.Println("First sync fail:", err)
 		return
@@ -114,9 +113,10 @@ func onConnected(ws *websocket.Conn) {
 }
 
 func main() {
+	color_id = 1
 	for x := 0; x < color_x; x++ {
 		for y := 0; y < color_x; y++ {
-			color.data[x][y] = "#ffffff"
+			color.data[x][y] = "#000000"
 		}
 	}
 	clients = list.New()
