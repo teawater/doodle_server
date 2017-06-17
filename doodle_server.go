@@ -7,6 +7,7 @@ import (
 	"time"
 	"fmt"
 	"container/list"
+	"encoding/json"
 
 	"golang.org/x/net/websocket"
 )
@@ -18,8 +19,8 @@ const color_x = 750
 const color_y = 750
 
 type color_s struct {
-	fmt int
-	data [color_x][color_y]string
+	Fmt int
+	Data [color_x][color_y]string
 }
 var color color_s
 var color_id uint64
@@ -44,8 +45,17 @@ func sync_color_to_client(ws *websocket.Conn, id *uint64) (err error) {
 
 	*id = color_id
 
-	ws.SetDeadline(time.Now().Add(time.Second * 10))
-	err = websocket.JSON.Send(ws, color)
+	
+	//err = websocket.JSON.Send(ws, color)
+	b, err := json.Marshal(color)
+	if (err != nil) {
+		log.Println(err)
+	}
+	log.Println(string(b))
+	ws.SetWriteDeadline(time.Now().Add(time.Second * 10))
+	if err = websocket.Message.Send(ws, b); err != nil {
+		log.Println("Can't send")
+	}
 
 	return
 }
@@ -66,7 +76,7 @@ func onConnected(ws *websocket.Conn) {
 	log.Println("Client:", ws.RemoteAddr(), ws.RemoteAddr().Network(), ws.RemoteAddr().String())
 
 	//Handle first pack
-	ws.SetDeadline(time.Now().Add(time.Second * 60))
+	ws.SetReadDeadline(time.Now().Add(time.Second * 60))
 	err = websocket.JSON.Receive(ws, &reply)
 	if err != nil {
 		log.Println("Get first packet error:", err)
@@ -116,7 +126,7 @@ func main() {
 	color_id = 1
 	for x := 0; x < color_x; x++ {
 		for y := 0; y < color_x; y++ {
-			color.data[x][y] = "#000000"
+			color.Data[x][y] = "#000000"
 		}
 	}
 	clients = list.New()
