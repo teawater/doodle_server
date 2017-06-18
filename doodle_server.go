@@ -19,11 +19,11 @@ const color_x = 750
 const color_y = 750
 
 type color_s struct {
+	Id uint64
 	Fmt int
 	Data [color_x][color_y]string
 }
 var color color_s
-var color_id uint64
 var color_lock sync.RWMutex
 
 var clients *list.List
@@ -35,27 +35,26 @@ func sync_color_to_client(ws *websocket.Conn, id *uint64) (err error) {
 	color_lock.RLock()
 	defer color_lock.RUnlock()
 
-	if color_id == *id {
+	if color.Id == *id {
 		return
 	}
-	if color_id < *id {
-		err = fmt.Errorf("get wrong id %d that it should small than %d", *id, color_id)
+	if color.Id < *id {
+		err = fmt.Errorf("get wrong id %d that it should small than %d", *id, color.Id)
 		return
 	}
 
-	*id = color_id
-
+	*id = color.Id
 	
-	//err = websocket.JSON.Send(ws, color)
-	b, err := json.Marshal(color)
-	if (err != nil) {
-		log.Println(err)
-	}
-	log.Println(string(b))
-	ws.SetWriteDeadline(time.Now().Add(time.Second * 10))
-	if err = websocket.Message.Send(ws, b); err != nil {
-		log.Println("Can't send")
-	}
+	err = websocket.JSON.Send(ws, color)
+	// b, err := json.Marshal(color)
+	// if (err != nil) {
+		// log.Println(err)
+	// }
+	// log.Println(string(b))
+	// ws.SetWriteDeadline(time.Now().Add(time.Second * 10))
+	// if err = websocket.Message.Send(ws, b); err != nil {
+		// log.Println("Can't send")
+	// }
 
 	return
 }
@@ -123,7 +122,7 @@ func onConnected(ws *websocket.Conn) {
 }
 
 func main() {
-	color_id = 1
+	color.Id = 1
 	for x := 0; x < color_x; x++ {
 		for y := 0; y < color_x; y++ {
 			color.Data[x][y] = "#000000"
