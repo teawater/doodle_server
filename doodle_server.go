@@ -7,7 +7,6 @@ import (
 	"time"
 	"fmt"
 	"container/list"
-	"encoding/json"
 
 	"golang.org/x/net/websocket"
 )
@@ -46,15 +45,6 @@ func sync_color_to_client(ws *websocket.Conn, id *uint64) (err error) {
 	*id = color.Id
 	
 	err = websocket.JSON.Send(ws, color)
-	// b, err := json.Marshal(color)
-	// if (err != nil) {
-		// log.Println(err)
-	// }
-	// log.Println(string(b))
-	// ws.SetWriteDeadline(time.Now().Add(time.Second * 10))
-	// if err = websocket.Message.Send(ws, b); err != nil {
-		// log.Println("Can't send")
-	// }
 
 	return
 }
