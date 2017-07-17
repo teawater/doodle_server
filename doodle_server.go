@@ -52,7 +52,9 @@ func handle_receive_pack(c *websocket.Conn, quit chan bool) {
 	
 }
 
-var upgrader = websocket.Upgrader{} // use default options
+var upgrader = websocket.Upgrader{
+    CheckOrigin: func(r *http.Request) bool { return true },
+}
 
 func onConnected(w http.ResponseWriter, r *http.Request) {
 	var err error
