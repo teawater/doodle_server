@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const ssl_crt = "server.crt"
-const ssl_key = "server.key"
+const ssl_crt = "../server.crt"
+const ssl_key = "../server.key"
 
 const color_x = 750
 const color_y = 750
